@@ -35,6 +35,7 @@ import InspectorImagePreview from './InspectorPreview/InspectorPreviewTypes/Insp
 import InspectorSoundPreview from './InspectorPreview/InspectorPreviewTypes/InspectorSoundPreview';
 import InspectorScriptWindow from './InspectorScriptWindow/InspectorScriptWindow';
 import InspectorCheckbox from './InspectorRow/InspectorRowTypes/InspectorCheckbox';
+import InspectorFramePicker from './InspectorFramePicker/InspectorFramePicker';
 
 import { Console, Hook, Unhook } from 'console-feed';
 // import { useEffect, useState } from 'react';
@@ -680,6 +681,7 @@ class Inspector extends Component {
           tooltip="Synced" 
           checked={this.getSelectionAttribute('isSynced')}
           onChange={(val) => this.setSelectionAttribute('isSynced', !this.getSelectionAttribute('isSynced'))}/>}
+          <InspectorFramePicker project={this.props.project} onChange={(val) => this.setSelectionAttribute('singleFrameNumber', val)} />
       </div>
     )
   }
