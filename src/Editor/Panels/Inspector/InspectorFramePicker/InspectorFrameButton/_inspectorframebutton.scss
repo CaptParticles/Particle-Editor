@@ -9,6 +9,12 @@
 .frameButton:hover {
     background-color: rgba(0, 0, 0, 0.1);
 }
+.frameButton-active {
+    background-color: #426180;
+}
+.frameButton-active:hover {
+    background-color: rgba(66, 97, 128, 0.8);
+}
 
 .frameButton > * {
     margin: 3px;

@@ -13,7 +13,7 @@ import WickInput from 'Editor/Util/WickInput/WickInput';
 class InspectorFrameButton extends Component {
     render() {
         return (
-            <WickInput type="button" className="frameButton" onClick={this.props.onClick}>
+            <WickInput type="button" className={this.props.isActive ? "frameButton frameButton-active" : "frameButton"} onClick={this.props.onClick}>
                 <div className="frameButton-image">
                     {this.props.children}
                 </div>
