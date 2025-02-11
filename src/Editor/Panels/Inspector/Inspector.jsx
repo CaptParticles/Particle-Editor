@@ -681,10 +681,12 @@ class Inspector extends Component {
           tooltip="Synced" 
           checked={this.getSelectionAttribute('isSynced')}
           onChange={(val) => this.setSelectionAttribute('isSynced', !this.getSelectionAttribute('isSynced'))}/>}
+        {
+          this.getSelectionAttribute('singleFrameNumber') &&
           <InspectorFramePicker
             project={this.props.project}
             getActive={() => this.getSelectionAttribute('singleFrameNumber')}
-            onChange={(val) => this.setSelectionAttribute('singleFrameNumber', val)} />
+            onChange={(val) => this.setSelectionAttribute('singleFrameNumber', val)} />}
       </div>
     )
   }
