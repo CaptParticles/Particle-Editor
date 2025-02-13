@@ -570,8 +570,14 @@ Wick.View.Project = class extends Wick.View {
             // We're in the root timeline, use the color given to us from the user (or use a default)
             this.canvas.style.backgroundColor = this.canvasBGColor || Wick.View.Project.DEFAULT_CANVAS_BG_COLOR;
         } else {
-            // We're inside a clip, so use the project background color as the container background color
-            this.canvas.style.backgroundColor = this.model.backgroundColor.hex;
+            // We're inside a clip
+            if (this.model.toolSettings.getSetting('outsideClipShowBorder')) {
+                // Use the same color as the root
+                this.canvas.style.backgroundColor = this.canvasBGColor || Wick.View.Project.DEFAULT_CANVAS_BG_COLOR;
+            } else {
+                // Use the project background color as the container background color
+                this.canvas.style.backgroundColor = this.model.backgroundColor.hex;
+            }
         }
     }
 
@@ -638,42 +644,58 @@ Wick.View.Project = class extends Wick.View {
         this.paper.view.center = new paper.Point(-pan.x, -pan.y);
         this.paper.view.rotation = this.model.rotation;
 
-        // Generate background layer
-        this._svgBackgroundLayer.removeChildren();
-        this._svgBackgroundLayer.locked = true;
-        this.paper.project.addLayer(this._svgBackgroundLayer);
-
+        // Add transformed objects layer before background
         this._svgOuterLayer.removeChildren();
         this._svgOuterLayer.matrix.set(new paper.Matrix());
         this._svgOuterLayer.locked = true;
         this._svgOuterLayer.opacity = 1;
         this.paper.project.addLayer(this._svgOuterLayer);
 
+        // Generate background layer
+        this._svgBackgroundLayer.removeChildren();
+        this._svgBackgroundLayer.locked = true;
+        this.paper.project.addLayer(this._svgBackgroundLayer);
+
         if (this.model.focus.isRoot) {
             // We're in the root timeline, render the canvas normally
             var stage = this._generateSVGCanvasStage();
             this._svgBackgroundLayer.addChild(stage);
         } else {
-            // We're inside a clip, don't render the canvas BG, instead render a crosshair at (0,0)
+            // We're inside a clip, don't render the canvas BG directly, instead render a crosshair at (0,0)
             var originCrosshair = this._generateSVGOriginCrosshair();
             this._svgBackgroundLayer.addChild(originCrosshair);
 
             if (this.model.toolSettings.getSetting('outsideClipStyle') !== 'none') {
-                var thisParentLayer = this.model.focus.parentLayer;
-                var thisParentTimeline = thisParentLayer.parentTimeline;
+                if (this.model.toolSettings.getSetting('outsideClipShowBorder')) {
+                    this._svgOuterLayer.addChild(this._generateSVGCanvasStage());
+                }
+
+                var rootTimeline = this.model.root.timeline;
+
+                var objectsGroup = new paper.Group();
+                this._svgOuterLayer.addChild(objectsGroup);
     
-                thisParentTimeline.view.render();
+                rootTimeline.view.render();
                 this.model.focus.view.group.remove();
-                thisParentTimeline.view.frameLayers.forEach(layer => {
-                    this._svgOuterLayer.addChild(layer);
+                rootTimeline.view.frameLayers.forEach(layer => {
+                    objectsGroup.addChild(layer);
                 });
     
-                var thisClipTransformation = this.model.focus.transformation;
-                this._svgOuterLayer.translate(-thisClipTransformation.x, -thisClipTransformation.y);
-                this._svgOuterLayer.rotate(-thisClipTransformation.rotation, new paper.Point());
-                this._svgOuterLayer.scale(1 / thisClipTransformation.scaleX, 1 / thisClipTransformation.scaleY, new paper.Point());
+                // Apply visual effects
+                var transformations = [];
+                var clipIteration = this.model.focus;
+                while (!clipIteration.isRoot) {
+                    transformations.push(clipIteration.transformation);
+                    clipIteration = clipIteration.parentClip;
+                }
+                transformations.reverse();
+                transformations.forEach(transform => {
+                    this._svgOuterLayer.translate(-transform.x, -transform.y);
+                    this._svgOuterLayer.rotate(-transform.rotation, new paper.Point());
+                    this._svgOuterLayer.scale(1 / transform.scaleX, 1 / transform.scaleY, new paper.Point());
+                });
 
-                this._svgOuterLayer.opacity = this.model.toolSettings.getSetting('outsideClipStandardOpacity');
+                objectsGroup.opacity = this.model.toolSettings.getSetting('outsideClipStandardOpacity');
             }
         }
 

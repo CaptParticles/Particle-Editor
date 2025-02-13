@@ -46,25 +46,36 @@ class EditorSettings extends Component {
       case 'standard':
         const inputRestrictions = this.props.getToolSettingRestrictions('outsideClipStandardOpacity');
         outsideClipStyleContent = (
-          <div className="editor-settings-row">
-            Object Opacity:
-            <div className="editor-settings-slider-row">
-              <WickInput
-                className="editor-settings-slider-row-slider"
-                type="slider"
-                id="editor-settings-outside-clip-opacity-slider"
-                value={this.props.getToolSetting('outsideClipStandardOpacity')}
-                onChange={(val) => {this.props.setToolSetting('outsideClipStandardOpacity', val)}}
-                {...inputRestrictions} />
-              <WickInput
-                className="editor-settings-slider-row-number"
-                type="numeric"
-                id="editor-settings-outside-clip-opacity-number"
-                value={this.props.getToolSetting('outsideClipStandardOpacity')}
-                onChange={(val) => {this.props.setToolSetting('outsideClipStandardOpacity', val)}}
-                {...inputRestrictions} />
+          <>
+            <div className="editor-settings-row">
+              Object Opacity:
+              <div className="editor-settings-slider-row">
+                <WickInput
+                  className="editor-settings-slider-row-slider"
+                  type="slider"
+                  id="editor-settings-outside-clip-opacity-slider"
+                  value={this.props.getToolSetting('outsideClipStandardOpacity')}
+                  onChange={(val) => {this.props.setToolSetting('outsideClipStandardOpacity', val)}}
+                  {...inputRestrictions} />
+                <WickInput
+                  className="editor-settings-slider-row-number"
+                  type="numeric"
+                  id="editor-settings-outside-clip-opacity-number"
+                  value={this.props.getToolSetting('outsideClipStandardOpacity')}
+                  onChange={(val) => {this.props.setToolSetting('outsideClipStandardOpacity', val)}}
+                  {...inputRestrictions} />
+              </div>
             </div>
-          </div>
+            <div className="editor-settings-row">
+              <WickInput
+                className="editor-settings-checkbox"
+                type="checkbox"
+                id="editor-settings-outside-clip-border-checkbox"
+                label="Show Main Borders"
+                checked={this.props.getToolSetting('outsideClipShowBorder')}
+                onChange={(val) => {this.props.setToolSetting('outsideClipShowBorder', !this.props.getToolSetting('outsideClipShowBorder'))}} />
+            </div>
+          </>
         );
         break;
       case 'none':
