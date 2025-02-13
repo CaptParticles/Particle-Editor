@@ -103,11 +103,28 @@ Wick.ToolSettings = class {
             type: 'color',
             name: 'forwardOnionSkinTint',
             default: new Wick.Color('rgba(0, 0, 255, .5)'),
-        },{
+        }, {
             type: "choice",
             name: 'brushMode',
             default: 'none',
             options: ['none', 'behind', 'inside']
+        }, {
+        /**
+         * The render style of the outside-clip viewer.
+         * "none": Don't show the objects outside the current clip
+         * "standard": Show the outside objects at a certain opacity
+         */
+            type: "choice",
+            name: 'outsideClipStyle',
+            default: 'none',
+            options: ['none', 'standard']
+        }, {
+            type: "number",
+            name: 'outsideClipStandardOpacity',
+            default: 0.5,
+            min: 0,
+            max: 1,
+            step: 0.01,
         }];
     }
 

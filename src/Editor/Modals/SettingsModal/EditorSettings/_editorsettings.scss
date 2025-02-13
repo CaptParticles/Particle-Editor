@@ -88,3 +88,16 @@
   height: 100%;
   margin-right: 4px;
 }
+
+.editor-settings-slider-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+.editor-settings-slider-row-slider {
+  flex: 0 1 137px;
+  margin: 0 8px 0 0;
+}
+.editor-settings-slider-row-number {
+  flex: 0 1 40px;
+}
