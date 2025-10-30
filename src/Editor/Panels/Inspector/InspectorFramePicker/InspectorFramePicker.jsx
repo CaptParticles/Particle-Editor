@@ -68,15 +68,23 @@ class InspectorFramePicker extends Component {
             return (<InspectorFrameButton label={item[1]} key={item[1]} onClick={() => this.onChange(item[1])} isActive={this.getActive() === item[1]}>{item[0]}</InspectorFrameButton>);
         });
         return (
-            <>
-                <WickInput type="button" className="framePicker-switch"
+            <div className="inspector-item">
+                <WickInput type="button" className="wick-frame-picker-switch"
                 onClick={
                     () => this.setState(switchFramePicker)
                 }>
                     Toggle Frame Picker
                 </WickInput>
-                {this.state.showFramePicker && frameButtons}
-            </>
+                {this.state.showFramePicker &&
+                <div className="wick-frame-picker-button-container">
+                    {frameButtons}
+                    <div className="wick-frame-picker-disabled"
+                        style={{display: this.props.isSingleFrame ? "none" : ""}}>
+                        Requires Animation set to "Single Frame"
+                    </div>
+                </div>
+                }
+            </div>
         );
     }
 }

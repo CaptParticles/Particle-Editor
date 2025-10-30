@@ -681,12 +681,6 @@ class Inspector extends Component {
           tooltip="Synced" 
           checked={this.getSelectionAttribute('isSynced')}
           onChange={(val) => this.setSelectionAttribute('isSynced', !this.getSelectionAttribute('isSynced'))}/>}
-        {
-          this.getSelectionAttribute('singleFrameNumber') &&
-          <InspectorFramePicker
-            project={this.props.project}
-            getActive={() => this.getSelectionAttribute('singleFrameNumber')}
-            onChange={(val) => this.setSelectionAttribute('singleFrameNumber', val)} />}
       </div>
     )
   }
@@ -817,7 +811,17 @@ class Inspector extends Component {
    * Renders the inspector view for all properties of a clip selection.
    */
   renderClip = () => {
-    return ( this.renderGroupContent() );
+    return (
+      <div className="inspector-content">
+        <InspectorFramePicker
+          project={this.props.project}
+          isSingleFrame={this.getSelectionAttribute('animationType') === "single"}
+          getActive={() => this.getSelectionAttribute('singleFrameNumber')}
+          onChange={(val) => this.setSelectionAttribute('singleFrameNumber', val)} />
+        {this.renderIdentifier()}
+        {this.renderSelectionTransformProperties()}
+      </div>
+    );
   }
 
   /**
