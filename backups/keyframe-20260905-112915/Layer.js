@@ -187,62 +187,6 @@ Wick.Layer = class extends Wick.Base {
     }
 
     /**
-     * Adds a keyframe at the given playhead position.
-     *
-     * If the playhead is inside an existing frame, that frame is split and
-     * the new keyframe receives an independent copy of the existing content.
-     * Editing either keyframe afterwards will not affect the other.
-     *
-     * @param {number} playheadPosition - Where to insert the keyframe.
-     * @return {Wick.Frame|null} The inserted/existing keyframe.
-     */
-    insertKeyframe (playheadPosition) {
-        if (!Number.isFinite(playheadPosition) || playheadPosition < 1) {
-            throw new Error('insertKeyframe: playheadPosition must be a positive number');
-        }
-
-        playheadPosition = Math.floor(playheadPosition);
-
-        // Already on a keyframe/frame boundary: do not duplicate it.
-        var existingFrame = this.getFrameAtPlayheadPosition(playheadPosition);
-        if (!existingFrame) {
-            // There is no frame at this position. Create a blank keyframe.
-            var blankFrame = new Wick.Frame({
-                start: playheadPosition,
-                end: playheadPosition,
-            });
-
-            this.addChild(blankFrame);
-            this.resolveOverlap([blankFrame]);
-            this.resolveGaps([blankFrame]);
-
-            return blankFrame;
-        }
-
-        if (existingFrame.start === playheadPosition) {
-            return existingFrame;
-        }
-
-        // Copy the complete frame tree so paths, clips, and nested data are
-        // independent objects instead of shared references.
-        var newFrame = existingFrame.copy();
-
-        // The original frame becomes the first part of the hold.
-        var originalEnd = existingFrame.end;
-        existingFrame.end = playheadPosition - 1;
-
-        // The copied frame becomes the new keyframe and keeps the remainder
-        // of the original frame's duration.
-        newFrame.start = playheadPosition;
-        newFrame.end = originalEnd;
-
-        // Do not use addFrame()/resolveGaps() here: the original and copied
-        // frames already form one continuous pair and must not be altered.
-        this.addChild(newFrame);
-
-        return newFrame;
-    }
-    /**
      * Removes a frame from the Layer.
      * @param  {Wick.Frame} frame Frame to remove.
      */

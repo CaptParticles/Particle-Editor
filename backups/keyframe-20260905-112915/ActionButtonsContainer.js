@@ -30,18 +30,12 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
             }
         });
 
-        this.insertKeyframeButton = new Wick.GUIElement.ActionButton(this.model, {
-            tooltip: 'Insert Keyframe',
+        this.insertBlankFrameButton = new Wick.GUIElement.ActionButton(this.model, {
+            tooltip: 'Add Frame',
             icon: 'cut_frame',
             clickFn: () => {
-                var project = this.model.project;
-                var timeline = project.activeTimeline;
-                var layer = project.activeLayer;
-
-                if (layer && timeline) {
-                    layer.insertKeyframe(timeline.playheadPosition);
-                    this.projectWasModified();
-                }
+                this.model.project.insertBlankFrame();
+                this.projectWasModified();
             }
         });
 
@@ -144,7 +138,7 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
             ctx.save();
             ctx.globalAlpha = 1.0;
             ctx.translate(30, 20);
-                this.insertKeyframeButton.draw(true); // Insert frame is always active...
+                this.insertBlankFrameButton.draw(true); // Insert frame is always active...
             ctx.restore();
 
             // Add Tween button
