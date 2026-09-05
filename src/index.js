@@ -25,6 +25,15 @@ import * as serviceWorker from './serviceWorker';
 import initializeDefaultFileHandlers from './files/filehandler';
 import { initAndroidPlatform } from './tauri-android';
 
+
+// Ignore the harmless ResizeObserver notification that can be emitted by
+// react-reflex while the editor panels resize.
+window.addEventListener('error', (event) => {
+    if (event.message && event.message.startsWith('ResizeObserver loop')) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+    }
+}, true);
 // Android-specific overrides must run before the default file handlers,
 // so filehandler.js sees window.saveFileFromWick already set and wraps it.
 initAndroidPlatform();
