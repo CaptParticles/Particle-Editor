@@ -64,9 +64,12 @@ class InspectorFramePicker extends Component {
             return {showFramePicker: !previous.showFramePicker};
         }
 
-        let frameButtons = this.fetchSVGs().map((item) => {
-            return (<InspectorFrameButton label={item[1]} key={item[1]} onClick={() => this.onChange(item[1])} isActive={this.getActive() === item[1]}>{item[0]}</InspectorFrameButton>);
-        });
+        let frameButtons = [];
+        if (this.state.showFramePicker && this.props.isSingleFrame) {
+            frameButtons = this.fetchSVGs().map((item) => {
+                return (<InspectorFrameButton label={item[1]} key={item[1]} onClick={() => this.onChange(item[1])} isActive={this.getActive() === item[1]}>{item[0]}</InspectorFrameButton>);
+            });
+        }
         return (
             <div className="inspector-item">
                 <WickInput type="button" className="wick-frame-picker-switch"
