@@ -881,9 +881,17 @@ class Editor extends EditorCore {
         // Force react to render
         // TODO: Determine a non-hack way to do this.
         if (!options.skipReactRender) {
-            this.setState({
-                project: '' + Math.random(),
-            });
+            const updateReact = () => {
+                this.setState({
+                    project: '' + Math.random(),
+                });
+            };
+
+            if (options.deferReactRender) {
+                setTimeout(updateReact, 0);
+            } else {
+                updateReact();
+            }
         }
     }
 

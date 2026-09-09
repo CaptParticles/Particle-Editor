@@ -480,7 +480,10 @@ class EditorCore extends Component {
      */
     setSelectionAttribute = (attribute, newValue) => {
         this.project.selection[attribute] = newValue;
-        this.projectDidChange({ actionName: "Set Selection Attribute: " + attribute + ":" + newValue });
+        this.projectDidChange({
+            actionName: "Set Selection Attribute: " + attribute + ":" + newValue,
+            deferReactRender: attribute === "animationType",
+        });
     }
 
     /**

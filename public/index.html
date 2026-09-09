@@ -2,6 +2,19 @@
 <html lang="en">
 
 <head>
+    <!-- CANDLESTICK_RESIZEOBSERVER_FIX -->
+    <script>
+        window.addEventListener('error', function (event) {
+            if (
+                event.message &&
+                event.message.indexOf('ResizeObserver loop') === 0
+            ) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+            }
+        }, true);
+    </script>
+
     <meta charset="utf-8">
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
