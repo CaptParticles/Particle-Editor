@@ -22,6 +22,7 @@ Wick.GUIElement.ActionButton = class extends Wick.GUIElement.Button {
         super(model, args);
 
         this.icon = args.icon;
+        this.label = args.label || null;
         this.width = args.width || Wick.GUIElement.ACTION_BUTTON_RADIUS;
         this.height = args.height || Wick.GUIElement.ACTION_BUTTON_RADIUS;
         this.toggled = args.toggled || false;
@@ -47,10 +48,18 @@ Wick.GUIElement.ActionButton = class extends Wick.GUIElement.Button {
             ctx.fill();
         }
 
-        // Button Icon
-        var w = this.width * 0.8;
-        var h = this.height * 0.8;
-        ctx.drawImage(Wick.GUIElement.Icons.getIcon(this.icon), -w, -h, w*2, h*2);
+        // Button Icon / Label
+        if (this.label) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.label, 0, 0);
+        } else {
+            var w = this.width * 0.8;
+            var h = this.height * 0.8;
+            ctx.drawImage(Wick.GUIElement.Icons.getIcon(this.icon), -w, -h, w*2, h*2);
+        }
     };
 
     get bounds () {

@@ -45,6 +45,15 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
             }
         });
 
+        this.selectTimelineItemsButton = new Wick.GUIElement.ActionButton(this.model, {
+            tooltip: 'Select Timeline Items',
+            label: 'S',
+            clickFn: () => {
+                this.model.project.timelineSelectionOnly = !this.model.project.timelineSelectionOnly;
+                this.projectWasModified();
+            }
+        });
+
         this.addTweenButton = new Wick.GUIElement.ActionButton(this.model, {
             tooltip: 'Add Tween',
             icon: 'add_tween',
@@ -128,7 +137,7 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
 
         ctx.save();
 
-        var widthOfActionButtonContainer = 90;
+        var widthOfActionButtonContainer = 120;
         var bump = 10;
         var leftOfContainer = Wick.GUIElement.LAYERS_CONTAINER_WIDTH + bump - widthOfActionButtonContainer;
 
@@ -147,6 +156,14 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
                 this.insertKeyframeButton.draw(true); // Insert frame is always active...
             ctx.restore();
 
+            // Select Timeline Items button
+            ctx.save();
+            ctx.globalAlpha = 1.0;
+            ctx.translate(90, 20);
+            this.selectTimelineItemsButton.toggled = this.model.project.timelineSelectionOnly;
+            this.selectTimelineItemsButton.draw(true);
+            ctx.restore();
+
             // Add Tween button
             ctx.save();
             ctx.globalAlpha = tweenButtonIsActive ? 1.0 : 0.3;
@@ -158,3 +175,4 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
         ctx.restore();
     };
 };
+

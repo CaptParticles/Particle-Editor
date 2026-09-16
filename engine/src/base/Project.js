@@ -78,6 +78,9 @@ Wick.Project = class extends Wick.Base {
         this._publishedMode = false; // Review the publishedMode setter for rules.
         this._showClipBorders = true;
 
+        // Timeline selection-only mode. When enabled, timeline items can be selected but not edited.
+        this._timelineSelectionOnly = false;
+
         this._userErrorCallback = null;
 
         this._tools = {
@@ -346,6 +349,14 @@ Wick.Project = class extends Wick.Base {
 
     set backgroundColor(backgroundColor) {
         this._backgroundColor = backgroundColor;
+    }
+
+    get timelineSelectionOnly() {
+        return this._timelineSelectionOnly;
+    }
+
+    set timelineSelectionOnly(value) {
+        this._timelineSelectionOnly = Boolean(value);
     }
 
     get hitTestOptions() {
