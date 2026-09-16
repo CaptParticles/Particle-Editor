@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2026.9.15.19.52.6";
+var WICK_ENGINE_BUILD_VERSION = "2026.9.16.18.37.23";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -65629,7 +65629,7 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
     var deleteButtonIsActive = this.model.project.selection.getSelectedObjects('Timeline').length > 0;
     ctx.save();
     ctx.save();
-    var widthOfActionButtonContainer = 90;
+    var widthOfActionButtonContainer = 120;
     var bump = 10;
     var leftOfContainer = Wick.GUIElement.LAYERS_CONTAINER_WIDTH + bump - widthOfActionButtonContainer;
     ctx.translate(leftOfContainer, 0);
