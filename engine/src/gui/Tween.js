@@ -163,6 +163,10 @@ Wick.GUIElement.Tween = class extends Wick.GUIElement {
     }
 
     onMouseDrag (e) {
+        if(this.model.project.timelineSelectionOnly) {
+            return;
+        }
+
         // Start dragging: Create the tween ghosts
         if(!this._ghost) {
             this._ghost = new Wick.GUIElement.TweenGhost(this.model);
@@ -170,6 +174,12 @@ Wick.GUIElement.Tween = class extends Wick.GUIElement {
     }
 
     onMouseUp (e) {
+        if(this.model.project.timelineSelectionOnly) {
+            this.model.project.timelineSelectionOnly = false;
+            this.projectWasModified();
+            return;
+        }
+
         if(this._ghost) {
             this._ghost.finish();
             this._ghost = null;

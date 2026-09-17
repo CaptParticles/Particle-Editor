@@ -177,6 +177,10 @@ Wick.GUIElement.FramesContainer = class extends Wick.GUIElement {
     }
 
     onMouseDrag () {
+        if(this.model.project.timelineSelectionOnly) {
+            return;
+        }
+
         if(!this._selectionBox) {
             this._selectionBox = new Wick.GUIElement.SelectionBox(this.model);
         }
@@ -190,6 +194,13 @@ Wick.GUIElement.FramesContainer = class extends Wick.GUIElement {
     }
 
     onMouseUp (e) {
+        if(this.model.project.timelineSelectionOnly) {
+            this.model.project.timelineSelectionOnly = false;
+            this._selectionBox = null;
+            this.projectWasModified();
+            return;
+        }
+
         if(this._selectionBox) {
             if(!e.shiftKey) {
                 this.model.project.selection.clear();
