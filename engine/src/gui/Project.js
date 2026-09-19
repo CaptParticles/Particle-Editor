@@ -427,6 +427,7 @@ Wick.GUIElement.Project = class extends Wick.GUIElement {
         this.closePopupMenu();
         this.canvasClicked = true;
         this._clickXY = {x: e.clientX, y: e.clientY};
+        this._timelineSelectionOnlyAtMouseDown = this.model.timelineSelectionOnly;
 
         if(this._mouseHoverTargets.length === 0) {
             // Clicked nothing - clear the selection
@@ -447,6 +448,12 @@ Wick.GUIElement.Project = class extends Wick.GUIElement {
             target && target.onMouseUp(e);
         } else if (this.canvasClicked && this._lastClickedElem === target) {
             target && target.onMouseUp(e);
+        }
+
+        if(this._timelineSelectionOnlyAtMouseDown) {
+            this.model.timelineSelectionOnly = false;
+            this._timelineSelectionOnlyAtMouseDown = false;
+            this.projectWasModified();
         }
 
         this.canvasClicked = false;
