@@ -173,11 +173,7 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     }
 
     onMouseDown (e) {
-        if(this.model.project.timelineSelectionOnly) {
-            this._clickedEdge = null;
-        } else {
-            this._clickedEdge = this._mouseOverFrameEdge();
-        }
+        this._clickedEdge = this._mouseOverFrameEdge();
 
         var playheadPosition = this.model.start + Math.floor(this.localMouse.x / this.gridCellWidth);
         this.model.project.activeTimeline.playheadPosition = playheadPosition;
@@ -199,10 +195,6 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     }
 
     onMouseDrag (e) {
-        if(this.model.project.timelineSelectionOnly) {
-            return;
-        }
-
         if(!this._ghost) {
             var edge = this._clickedEdge;
             if(edge) {
@@ -214,13 +206,6 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     }
 
     onMouseUp (e) {
-        if(this.model.project.timelineSelectionOnly) {
-            this.model.project.timelineSelectionOnly = false;
-            this._clickedEdge = null;
-            this.projectWasModified();
-            return;
-        }
-
         if(this._ghost) {
             this._ghost.finish();
             this._ghost = null;
