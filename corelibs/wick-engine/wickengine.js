@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2026.9.16.18.37.23";
+var WICK_ENGINE_BUILD_VERSION = "2026.9.19.11.55.14";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -65545,7 +65545,7 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
       }
     });
     this.selectTimelineItemsButton = new Wick.GUIElement.ActionButton(this.model, {
-      tooltip: 'Select Timeline Items',
+      tooltip: 'Selection Mode',
       label: 'S',
       clickFn: () => {
         this.model.project.timelineSelectionOnly = !this.model.project.timelineSelectionOnly;
@@ -65636,21 +65636,21 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
     // Delete Frame button
     ctx.save();
     ctx.globalAlpha = deleteButtonIsActive ? 1.0 : 0.3;
-    ctx.translate(0, 20);
+    ctx.translate(-30, 20);
     this.deleteFrameButton.draw(deleteButtonIsActive);
     ctx.restore();
 
     // Insert Blank Frame Button
     ctx.save();
     ctx.globalAlpha = 1.0;
-    ctx.translate(30, 20);
+    ctx.translate(0, 20);
     this.insertKeyframeButton.draw(true); // Insert frame is always active...
     ctx.restore();
 
     // Select Timeline Items button
     ctx.save();
     ctx.globalAlpha = 1.0;
-    ctx.translate(90, 20);
+    ctx.translate(60, 20);
     this.selectTimelineItemsButton.toggled = this.model.project.timelineSelectionOnly;
     this.selectTimelineItemsButton.draw(true);
     ctx.restore();
@@ -65658,7 +65658,7 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
     // Add Tween button
     ctx.save();
     ctx.globalAlpha = tweenButtonIsActive ? 1.0 : 0.3;
-    ctx.translate(60, 20);
+    ctx.translate(30, 20);
     this.addTweenButton.draw(tweenButtonIsActive);
     ctx.restore();
     ctx.restore();
@@ -65963,7 +65963,11 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     }
   }
   onMouseDown(e) {
-    this._clickedEdge = this._mouseOverFrameEdge();
+    if (this.model.project.timelineSelectionOnly) {
+      this._clickedEdge = null;
+    } else {
+      this._clickedEdge = this._mouseOverFrameEdge();
+    }
     var playheadPosition = this.model.start + Math.floor(this.localMouse.x / this.gridCellWidth);
     this.model.project.activeTimeline.playheadPosition = playheadPosition;
     this.model.project.playAudioScrubSounds();
@@ -65981,6 +65985,9 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     this.projectWasModified();
   }
   onMouseDrag(e) {
+    if (this.model.project.timelineSelectionOnly) {
+      return;
+    }
     if (!this._ghost) {
       var edge = this._clickedEdge;
       if (edge) {
@@ -65991,6 +65998,12 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     }
   }
   onMouseUp(e) {
+    if (this.model.project.timelineSelectionOnly) {
+      this.model.project.timelineSelectionOnly = false;
+      this._clickedEdge = null;
+      this.projectWasModified();
+      return;
+    }
     if (this._ghost) {
       this._ghost.finish();
       this._ghost = null;
@@ -66400,6 +66413,9 @@ Wick.GUIElement.FramesContainer = class extends Wick.GUIElement {
     ctx.restore();
   }
   onMouseDrag() {
+    if (this.model.project.timelineSelectionOnly) {
+      return;
+    }
     if (!this._selectionBox) {
       this._selectionBox = new Wick.GUIElement.SelectionBox(this.model);
     }
@@ -66412,6 +66428,12 @@ Wick.GUIElement.FramesContainer = class extends Wick.GUIElement {
     }
   }
   onMouseUp(e) {
+    if (this.model.project.timelineSelectionOnly) {
+      this.model.project.timelineSelectionOnly = false;
+      this._selectionBox = null;
+      this.projectWasModified();
+      return;
+    }
     if (this._selectionBox) {
       if (!e.shiftKey) {
         this.model.project.selection.clear();
@@ -67635,6 +67657,7 @@ Wick.GUIElement.Project = class extends Wick.GUIElement {
       x: e.clientX,
       y: e.clientY
     };
+    this._timelineSelectionOnlyAtMouseDown = this.model.timelineSelectionOnly;
     if (this._mouseHoverTargets.length === 0) {
       // Clicked nothing - clear the selection
       this.model.selection.clear();
@@ -67652,6 +67675,11 @@ Wick.GUIElement.Project = class extends Wick.GUIElement {
       target && target.onMouseUp(e);
     } else if (this.canvasClicked && this._lastClickedElem === target) {
       target && target.onMouseUp(e);
+    }
+    if (this._timelineSelectionOnlyAtMouseDown) {
+      this.model.timelineSelectionOnly = false;
+      this._timelineSelectionOnlyAtMouseDown = false;
+      this.projectWasModified();
     }
     this.canvasClicked = false;
     this._isDragging = false;
@@ -68304,12 +68332,21 @@ Wick.GUIElement.Tween = class extends Wick.GUIElement {
     }
   }
   onMouseDrag(e) {
+    if (this.model.project.timelineSelectionOnly) {
+      return;
+    }
+
     // Start dragging: Create the tween ghosts
     if (!this._ghost) {
       this._ghost = new Wick.GUIElement.TweenGhost(this.model);
     }
   }
   onMouseUp(e) {
+    if (this.model.project.timelineSelectionOnly) {
+      this.model.project.timelineSelectionOnly = false;
+      this.projectWasModified();
+      return;
+    }
     if (this._ghost) {
       this._ghost.finish();
       this._ghost = null;
