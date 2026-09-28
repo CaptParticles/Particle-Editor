@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2026.9.19.11.55.14";
+var WICK_ENGINE_BUILD_VERSION = "2026.9.27.19.44.29";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -49608,11 +49608,8 @@ Wick.Layer = class extends Wick.Base {
       throw new Error('insertKeyframe: playheadPosition must be a positive number');
     }
     playheadPosition = Math.floor(playheadPosition);
-
-    // Already on a keyframe/frame boundary: do not duplicate it.
     var existingFrame = this.getFrameAtPlayheadPosition(playheadPosition);
     if (!existingFrame) {
-      // There is no frame at this position. Create a blank keyframe.
       var blankFrame = new Wick.Frame({
         start: playheadPosition,
         end: playheadPosition
@@ -49625,22 +49622,62 @@ Wick.Layer = class extends Wick.Base {
     if (existingFrame.start === playheadPosition) {
       return existingFrame;
     }
+    var originalEnd = existingFrame.end;
+    var splitPosition = playheadPosition - existingFrame.start + 1;
 
-    // Copy the complete frame tree so paths, clips, and nested data are
-    // independent objects instead of shared references.
+    // Capture the exact visual state at the new keyframe before splitting.
+    var splitTween = existingFrame.getActiveTween();
+    var splitTransformation = splitTween ? splitTween.transformation.copy() : null;
+
+    // Copy the complete frame so the new keyframe has independent content.
     var newFrame = existingFrame.copy();
 
-    // The original frame becomes the first part of the hold.
-    var originalEnd = existingFrame.end;
+    // Shorten the original frame to the left side of the new keyframe.
     existingFrame.end = playheadPosition - 1;
+
+    // Remove copied tween markers that are now outside the shortened frame.
+    existingFrame.tweens.slice().forEach(tween => {
+      if (tween.playheadPosition >= splitPosition) {
+        tween.remove();
+      }
+    });
+
+    // Preserve the tween's exact state at the split as the endpoint
+    // of the left-hand tween segment.
+    if (splitTransformation) {
+      existingFrame.addTween(new Wick.Tween({
+        playheadPosition: existingFrame.length,
+        transformation: splitTransformation.copy()
+      }));
+    }
 
     // The copied frame becomes the new keyframe and keeps the remainder
     // of the original frame's duration.
     newFrame.start = playheadPosition;
     newFrame.end = originalEnd;
 
-    // Do not use addFrame()/resolveGaps() here: the original and copied
-    // frames already form one continuous pair and must not be altered.
+    // Remove tween markers that belong before the new keyframe.
+    // Shift the remaining markers into the new frame's local timeline.
+    newFrame.tweens.slice().forEach(tween => {
+      if (tween.playheadPosition < splitPosition) {
+        tween.remove();
+      } else {
+        tween.playheadPosition = tween.playheadPosition - splitPosition + 1;
+      }
+    });
+
+    // Give the new keyframe its own tween state so editing this keyframe
+    // changes the tween from this point forward.
+    if (splitTransformation) {
+      var existingStartTween = newFrame.getTweenAtPosition(1);
+      if (existingStartTween) {
+        existingStartTween.remove();
+      }
+      newFrame.addTween(new Wick.Tween({
+        playheadPosition: 1,
+        transformation: splitTransformation.copy()
+      }));
+    }
     this.addChild(newFrame);
     return newFrame;
   }
@@ -49870,9 +49907,6 @@ Wick.Project = class extends Wick.Base {
     this._muted = false;
     this._publishedMode = false; // Review the publishedMode setter for rules.
     this._showClipBorders = true;
-
-    // Timeline selection-only mode. When enabled, timeline items can be selected but not edited.
-    this._timelineSelectionOnly = false;
     this._userErrorCallback = null;
     this._tools = {
       brush: new Wick.Tools.Brush(),
@@ -50110,12 +50144,6 @@ Wick.Project = class extends Wick.Base {
   }
   set backgroundColor(backgroundColor) {
     this._backgroundColor = backgroundColor;
-  }
-  get timelineSelectionOnly() {
-    return this._timelineSelectionOnly;
-  }
-  set timelineSelectionOnly(value) {
-    this._timelineSelectionOnly = Boolean(value);
   }
   get hitTestOptions() {
     return this._hitTestOptions;
@@ -50820,11 +50848,22 @@ Wick.Project = class extends Wick.Base {
    */
   tryToAutoCreateTween() {
     var frame = this.activeFrame;
-    if (frame.tweens.length > 0 && !frame.getTweenAtPosition(frame.getRelativePlayheadPosition())) {
+    if (!frame || frame.tweens.length === 0) return;
+    var playheadPosition = frame.getRelativePlayheadPosition();
+    var tween = frame.getTweenAtPosition(playheadPosition);
+    var clip = frame.clips[0];
+    if (tween && clip) {
+      // We are editing an existing tween keyframe.
+      // Store the edited clip transform on that tween keyframe.
+      tween.transformation = clip.transformation.copy();
+      return;
+    }
+    if (!tween) {
+      // We are between tween keyframes.
+      // Create a new keyframe using the edited/interpolated state.
       frame.createTween();
     }
   }
-
   /**
    * Move the right edge of all frames right one frame.
    */
@@ -65455,7 +65494,6 @@ Wick.GUIElement.ActionButton = class extends Wick.GUIElement.Button {
   constructor(model, args) {
     super(model, args);
     this.icon = args.icon;
-    this.label = args.label || null;
     this.width = args.width || Wick.GUIElement.ACTION_BUTTON_RADIUS;
     this.height = args.height || Wick.GUIElement.ACTION_BUTTON_RADIUS;
     this.toggled = args.toggled || false;
@@ -65479,18 +65517,10 @@ Wick.GUIElement.ActionButton = class extends Wick.GUIElement.Button {
       ctx.fill();
     }
 
-    // Button Icon / Label
-    if (this.label) {
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 14px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(this.label, 0, 0);
-    } else {
-      var w = this.width * 0.8;
-      var h = this.height * 0.8;
-      ctx.drawImage(Wick.GUIElement.Icons.getIcon(this.icon), -w, -h, w * 2, h * 2);
-    }
+    // Button Icon
+    var w = this.width * 0.8;
+    var h = this.height * 0.8;
+    ctx.drawImage(Wick.GUIElement.Icons.getIcon(this.icon), -w, -h, w * 2, h * 2);
   }
   get bounds() {
     return {
@@ -65542,14 +65572,6 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
           layer.insertKeyframe(timeline.playheadPosition);
           this.projectWasModified();
         }
-      }
-    });
-    this.selectTimelineItemsButton = new Wick.GUIElement.ActionButton(this.model, {
-      tooltip: 'Selection Mode',
-      label: 'S',
-      clickFn: () => {
-        this.model.project.timelineSelectionOnly = !this.model.project.timelineSelectionOnly;
-        this.projectWasModified();
       }
     });
     this.addTweenButton = new Wick.GUIElement.ActionButton(this.model, {
@@ -65629,36 +65651,28 @@ Wick.GUIElement.ActionButtonsContainer = class extends Wick.GUIElement {
     var deleteButtonIsActive = this.model.project.selection.getSelectedObjects('Timeline').length > 0;
     ctx.save();
     ctx.save();
-    var widthOfActionButtonContainer = 120;
+    var widthOfActionButtonContainer = 90;
     var bump = 10;
     var leftOfContainer = Wick.GUIElement.LAYERS_CONTAINER_WIDTH + bump - widthOfActionButtonContainer;
     ctx.translate(leftOfContainer, 0);
     // Delete Frame button
     ctx.save();
     ctx.globalAlpha = deleteButtonIsActive ? 1.0 : 0.3;
-    ctx.translate(-30, 20);
+    ctx.translate(0, 20);
     this.deleteFrameButton.draw(deleteButtonIsActive);
     ctx.restore();
 
     // Insert Blank Frame Button
     ctx.save();
     ctx.globalAlpha = 1.0;
-    ctx.translate(0, 20);
+    ctx.translate(30, 20);
     this.insertKeyframeButton.draw(true); // Insert frame is always active...
-    ctx.restore();
-
-    // Select Timeline Items button
-    ctx.save();
-    ctx.globalAlpha = 1.0;
-    ctx.translate(60, 20);
-    this.selectTimelineItemsButton.toggled = this.model.project.timelineSelectionOnly;
-    this.selectTimelineItemsButton.draw(true);
     ctx.restore();
 
     // Add Tween button
     ctx.save();
     ctx.globalAlpha = tweenButtonIsActive ? 1.0 : 0.3;
-    ctx.translate(30, 20);
+    ctx.translate(60, 20);
     this.addTweenButton.draw(tweenButtonIsActive);
     ctx.restore();
     ctx.restore();
@@ -65963,11 +65977,7 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     }
   }
   onMouseDown(e) {
-    if (this.model.project.timelineSelectionOnly) {
-      this._clickedEdge = null;
-    } else {
-      this._clickedEdge = this._mouseOverFrameEdge();
-    }
+    this._clickedEdge = this._mouseOverFrameEdge();
     var playheadPosition = this.model.start + Math.floor(this.localMouse.x / this.gridCellWidth);
     this.model.project.activeTimeline.playheadPosition = playheadPosition;
     this.model.project.playAudioScrubSounds();
@@ -65985,9 +65995,6 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     this.projectWasModified();
   }
   onMouseDrag(e) {
-    if (this.model.project.timelineSelectionOnly) {
-      return;
-    }
     if (!this._ghost) {
       var edge = this._clickedEdge;
       if (edge) {
@@ -65998,12 +66005,6 @@ Wick.GUIElement.Frame = class extends Wick.GUIElement {
     }
   }
   onMouseUp(e) {
-    if (this.model.project.timelineSelectionOnly) {
-      this.model.project.timelineSelectionOnly = false;
-      this._clickedEdge = null;
-      this.projectWasModified();
-      return;
-    }
     if (this._ghost) {
       this._ghost.finish();
       this._ghost = null;
@@ -66413,9 +66414,6 @@ Wick.GUIElement.FramesContainer = class extends Wick.GUIElement {
     ctx.restore();
   }
   onMouseDrag() {
-    if (this.model.project.timelineSelectionOnly) {
-      return;
-    }
     if (!this._selectionBox) {
       this._selectionBox = new Wick.GUIElement.SelectionBox(this.model);
     }
@@ -66428,12 +66426,6 @@ Wick.GUIElement.FramesContainer = class extends Wick.GUIElement {
     }
   }
   onMouseUp(e) {
-    if (this.model.project.timelineSelectionOnly) {
-      this.model.project.timelineSelectionOnly = false;
-      this._selectionBox = null;
-      this.projectWasModified();
-      return;
-    }
     if (this._selectionBox) {
       if (!e.shiftKey) {
         this.model.project.selection.clear();
@@ -67657,7 +67649,6 @@ Wick.GUIElement.Project = class extends Wick.GUIElement {
       x: e.clientX,
       y: e.clientY
     };
-    this._timelineSelectionOnlyAtMouseDown = this.model.timelineSelectionOnly;
     if (this._mouseHoverTargets.length === 0) {
       // Clicked nothing - clear the selection
       this.model.selection.clear();
@@ -67675,11 +67666,6 @@ Wick.GUIElement.Project = class extends Wick.GUIElement {
       target && target.onMouseUp(e);
     } else if (this.canvasClicked && this._lastClickedElem === target) {
       target && target.onMouseUp(e);
-    }
-    if (this._timelineSelectionOnlyAtMouseDown) {
-      this.model.timelineSelectionOnly = false;
-      this._timelineSelectionOnlyAtMouseDown = false;
-      this.projectWasModified();
     }
     this.canvasClicked = false;
     this._isDragging = false;
@@ -68332,21 +68318,12 @@ Wick.GUIElement.Tween = class extends Wick.GUIElement {
     }
   }
   onMouseDrag(e) {
-    if (this.model.project.timelineSelectionOnly) {
-      return;
-    }
-
     // Start dragging: Create the tween ghosts
     if (!this._ghost) {
       this._ghost = new Wick.GUIElement.TweenGhost(this.model);
     }
   }
   onMouseUp(e) {
-    if (this.model.project.timelineSelectionOnly) {
-      this.model.project.timelineSelectionOnly = false;
-      this.projectWasModified();
-      return;
-    }
     if (this._ghost) {
       this._ghost.finish();
       this._ghost = null;
