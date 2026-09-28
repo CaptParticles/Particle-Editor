@@ -1081,11 +1081,25 @@ orderDynamicFrames() {
      */
     tryToAutoCreateTween() {
         var frame = this.activeFrame;
-        if (frame.tweens.length > 0 && !frame.getTweenAtPosition(frame.getRelativePlayheadPosition())) {
+        if (!frame || frame.tweens.length === 0) return;
+
+        var playheadPosition = frame.getRelativePlayheadPosition();
+        var tween = frame.getTweenAtPosition(playheadPosition);
+        var clip = frame.clips[0];
+
+        if (tween && clip) {
+            // We are editing an existing tween keyframe.
+            // Store the edited clip transform on that tween keyframe.
+            tween.transformation = clip.transformation.copy();
+            return;
+        }
+
+        if (!tween) {
+            // We are between tween keyframes.
+            // Create a new keyframe using the edited/interpolated state.
             frame.createTween();
         }
     }
-
     /**
      * Move the right edge of all frames right one frame.
      */
