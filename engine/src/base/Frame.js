@@ -464,13 +464,14 @@ Wick.Frame = class extends Wick.Tickable {
      * Automatically creates a tween at the current playhead position. Converts all objects into one clip if needed.
      */
     createTween() {
-        // Don't make a tween if one already exits
+        // Don't make a tween if one already exists at this position.
         var playheadPosition = this.getRelativePlayheadPosition();
         if (this.getTweenAtPosition(playheadPosition)) {
             return;
         }
 
-        // If more than one object exists on the frame, or if there is only one path, create a clip from those objects
+        // If more than one object exists on the frame, or if there is only one path,
+        // create a clip from those objects so they can be tweened together.
         var clips = this.clips;
         var paths = this.paths;
         if ((clips.length === 0 && paths.length === 1) || (clips.length + paths.length) > 1) {
@@ -486,14 +487,34 @@ Wick.Frame = class extends Wick.Tickable {
             clip.addObjects(allDrawables);
         }
 
-        // Create the tween (if there's not already a tween at the current playhead position)
         var clip = this.clips[0];
+        var startTransformation = clip
+            ? clip.transformation.copy()
+            : new Wick.Transformation();
+
+        // Create the starting tween.
         this.addTween(new Wick.Tween({
             playheadPosition: playheadPosition,
-            transformation: clip ? clip.transformation.copy() : new Wick.Transformation(),
+            transformation: startTransformation,
         }));
-    }
 
+        // If the next keyframe immediately follows this frame,
+        // create the ending tween on the last frame before it.
+        var nextFrame = this.parentLayer.frames.find(function(frame) {
+            return frame.start === this.end + 1;
+        }, this);
+
+        if (nextFrame && nextFrame.contentful) {
+            var nextClip = nextFrame.clips[0];
+
+            if (nextClip) {
+                this.addTween(new Wick.Tween({
+                    playheadPosition: this.length,
+                    transformation: nextClip.transformation.copy(),
+                }));
+            }
+        }
+    }
     /**
      * Remove a tween from the frame.
      * @param {Wick.Tween} tween - the tween to remove.
@@ -739,3 +760,4 @@ Wick.Frame = class extends Wick.Tickable {
         });
     }
 }
+
